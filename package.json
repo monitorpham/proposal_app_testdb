@@ -19,5 +19,6 @@
   },
   "scripts": {
     "prettier:format": "prettier --write \"{,src/**/}*.{md,json,yml}\""
+    "start": "node index.js"
   }
 }
