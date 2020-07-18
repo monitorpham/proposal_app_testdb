@@ -30,6 +30,7 @@ import org.springframework.web.bind.annotation.*;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.time.ZonedDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -174,13 +175,27 @@ public class ProposalResource {
 		log.debug("REST request to get ProgessDetaill : {}", idProposal);
 		List<ProgessDetaill> progessDetaills = progessDetaillService.findAllByProposalId(idProposal);
 
-		for (ProgessDetaill progessDetaill : progessDetaills) {
-			log.debug("issueeeeeeeeeeeeeeeeeeeeee", progessDetaill.getEndDate());
-			if (progessDetaill.getEndDate()==null) {
-				return progessDetaill;
+		
+//		boolean checkAll = false;
+//		for (ProgessDetaill progessDetaill : progessDetaills) {
+//			if(progessDetaill.getEndDate()!= null) {
+//				checkAll = true;
+//			}
+//		}
+//		
+//		if(!checkAll) {
+//			return progessDetaills.get(0);
+//		}
+		
+		for (int i=progessDetaills.size() -1 ; i>0; i--  ) {
+			log.debug("issueeeeeeeeeeeeeeeeeeeeee", progessDetaills.get(i).getEndDate());
+			if (progessDetaills.get(i).getEndDate() != null) {
+				return progessDetaills.get(i);
+				
 			}
 		}
-		return progessDetaills.get(progessDetaills.size() - 1);
+		
+		return progessDetaills.get(0);
 	}
 
 	public ProgessDetaillDTO getCurrentProgessDetaillDTO(Long idProposal) {
@@ -223,9 +238,16 @@ public class ProposalResource {
 		if (group == 0) {
 			for (Proposal proposal : proposals) {
 				ProgessDetaill currentDetaill = getCurrentProgessDetaill(proposal.getId());
-				proposalDatas.add(new ProposalData2(proposal,currentDetaill.getId(),
-						currentDetaill.getProgress().getContentTask(),
-						proposal.getStartDate().plusDays(countDays+proposal.getAdditionalDate())));
+				if(proposal.isStatus()){
+					proposalDatas.add(new ProposalData2(proposal,currentDetaill.getId(),
+							currentDetaill.getProgress().getContentTask(),
+							proposal.getStartDate().plusDays(countDays+proposal.getAdditionalDate()),calRemainingDate(proposal.getEndDate(), proposal.getStartDate(), ChronoUnit.DAYS)));
+				}else{
+					proposalDatas.add(new ProposalData2(proposal,currentDetaill.getId(),
+							currentDetaill.getProgress().getContentTask(),
+							proposal.getStartDate().plusDays(countDays+proposal.getAdditionalDate()),calRemainingDate(ZonedDateTime.now(), proposal.getStartDate(), ChronoUnit.DAYS)));
+				}
+								
 			}
 			return proposalDatas;
 		}
@@ -238,8 +260,15 @@ public class ProposalResource {
 				for(UserExtra userExtra : userExtras) {
 					if(proposal.getUserExtra().getId().equals(userExtra.getId())) {
 						ProgessDetaill currentDetaill = getCurrentProgessDetaill(proposal.getId());
-						proposalDatas.add(new ProposalData2(proposal,currentDetaill.getId(),currentDetaill.getProgress().getContentTask(),
-								proposal.getStartDate().plusDays(countDays+proposal.getAdditionalDate())));
+						if(proposal.isStatus()){
+							proposalDatas.add(new ProposalData2(proposal,currentDetaill.getId(),
+									currentDetaill.getProgress().getContentTask(),
+									proposal.getStartDate().plusDays(countDays+proposal.getAdditionalDate()),calRemainingDate(proposal.getEndDate(), proposal.getStartDate(), ChronoUnit.DAYS)));
+						}else{
+							proposalDatas.add(new ProposalData2(proposal,currentDetaill.getId(),
+									currentDetaill.getProgress().getContentTask(),
+									proposal.getStartDate().plusDays(countDays+proposal.getAdditionalDate()),calRemainingDate(ZonedDateTime.now(), proposal.getStartDate(), ChronoUnit.DAYS)));
+						}
 					}
 				}
 				
@@ -255,8 +284,15 @@ public class ProposalResource {
 		for (Proposal proposal : proposals) {
 				if(proposal.getUserExtra().getId().equals(extra.getId())) {
 					ProgessDetaill currentDetaill = getCurrentProgessDetaill(proposal.getId());
-					proposalDatas.add(new ProposalData2(proposal,currentDetaill.getId(),currentDetaill.getProgress().getContentTask(),
-							proposal.getStartDate().plusDays(countDays+proposal.getAdditionalDate())));
+					if(proposal.isStatus()){
+						proposalDatas.add(new ProposalData2(proposal,currentDetaill.getId(),
+								currentDetaill.getProgress().getContentTask(),
+								proposal.getStartDate().plusDays(countDays+proposal.getAdditionalDate()),calRemainingDate(proposal.getEndDate(), proposal.getStartDate(), ChronoUnit.DAYS)));
+					}else{
+						proposalDatas.add(new ProposalData2(proposal,currentDetaill.getId(),
+								currentDetaill.getProgress().getContentTask(),
+								proposal.getStartDate().plusDays(countDays+proposal.getAdditionalDate()),calRemainingDate(ZonedDateTime.now(), proposal.getStartDate(), ChronoUnit.DAYS)));
+					}
 				}						
 		}
 		
@@ -271,19 +307,19 @@ public class ProposalResource {
 		List<ProgressStage> progressStages = new ArrayList<>();
 		
 		
-		Progress startProgress = new Progress();
-		startProgress.setContentTask("Tạo mới");
-		progressStages.add(new ProgressStage(Long.valueOf(0), null, null, null, startProgress,"Khởi tạo"));
+//		Progress startProgress = new Progress();
+//		startProgress.setContentTask("Tạo mới");
+//		progressStages.add(new ProgressStage(Long.valueOf(0), null, null, null, startProgress,"Khởi tạo"));
 		
 		for(ProgessDetaill progessDetaill : progessDetaills) {
 			progressStages.add(new ProgressStage(progessDetaill.getId(), progessDetaill.getStartDate(), progessDetaill.getEndDate(), progessDetaill.getLastModifiedBy(), progessDetaill.getProgress(),progessDetaill.getNote()));
 		}
 		
-		Progress completeProgress = new Progress();
-		completeProgress.setContentTask("Hoàn thành");
-		
-		
-		progressStages.add(new ProgressStage(Long.valueOf(8), null, proposalService.findOne(id).get().getEndDate(), null, completeProgress, "hoàn thành"));
+//		Progress completeProgress = new Progress();
+//		completeProgress.setContentTask("Hoàn thành");
+//		
+//		
+//		progressStages.add(new ProgressStage(Long.valueOf(8), null, proposalService.findOne(id).get().getEndDate(), null, completeProgress, "hoàn thành"));
 		
 		return progressStages;
 	}
@@ -295,8 +331,26 @@ public class ProposalResource {
 		
 		List<ProgessDetaillDTO> detaillDTOs = new ArrayList<>();
 		
+//		for(int i = progressStages.size()-2; i > 0; i--) {
+//				if(progressStages.get(i).getTimeStart() != null) {
+//					for(ProgressStage progressStage1 : progressStages) {
+//						if(!progressStages.get(i).getId().equals(new Long(0)) && !progressStages.get(i).getId().equals(new Long(8))) {
+//							if(progressStage1.getId().equals(progressStages.get(i).getId())) {
+//								break;
+//							}
+//							
+//							if(progressStage1.getTimeStart() == null) {
+//								progressStage1.setTimeStart(progressStages.get(i).getTimeStart());
+//								progressStage1.setTimeEnd(progressStages.get(i).getTimeEnd());
+//							}				
+//						}
+//					}
+//					break;
+//				}
+//		}		
+		
 		for(ProgressStage progressStage : progressStages) {
-			if(!progressStage.getId().equals(new Long(0)) && !progressStage.getId().equals(new Long(8))) {
+//			if(!progressStage.getId().equals(new Long(0)) && !progressStage.getId().equals(new Long(8))) {
 			ProgessDetaillDTO detaillDTO = new ProgessDetaillDTO();
 			detaillDTO.setId(progressStage.getId());
 			detaillDTO.setProgressId(progressStage.getProgress().getId());
@@ -306,8 +360,16 @@ public class ProposalResource {
 			detaillDTO.setEndDate(progressStage.getTimeEnd());
 			detaillDTOs.add(detaillDTO);
 			progessDetaillService.save(detaillDTO);	
-			}
-		}		
+//			}
+		}	
+		
+		if(progressStages.get(progressStages.size() - 1).getTimeEnd() != null ) {
+			ProposalDTO proposalDTO = proposalService.findOne(proposalId).get();
+			proposalDTO.setEndDate(progressStages.get(progressStages.size() - 1).getTimeEnd());
+			proposalDTO.setStatus(true);
+			proposalService.save(proposalDTO);
+		}
+		
 		return detaillDTOs;
 	}
 
@@ -346,4 +408,8 @@ public class ProposalResource {
 				.headers(HeaderUtil.createEntityDeletionAlert(applicationName, false, ENTITY_NAME, id.toString()))
 				.build();
 	}
+	
+	private Integer calRemainingDate(ZonedDateTime currentDate,ZonedDateTime createDateProposal,ChronoUnit unit) {
+	return (int) (long) unit.between(createDateProposal,currentDate);
+}
 }
